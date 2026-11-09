@@ -1307,10 +1307,6 @@ let lastCheckTime = Date.now();
 const SESSION_KEY = 'ticketSystem_session';
 const SESSION_TIMEOUT = 12 * 60 * 60 * 1000;
 
-// Variáveis para controle do Alerta Visual na Aba e Som
-let originalTitle = document.title;
-let titleInterval = null;
-
 async function chamarGas(action, payload = null, method = 'GET') {
   try {
     let url = `${API_URL}?action=${action}`;
@@ -1346,55 +1342,10 @@ function solicitarPermissaoNotificacao() {
   }
 }
 
-// Função para tocar um som de alerta (Beep)
-function tocarAlarmeSonoro() {
-  try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Nota D5
-    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.3); // Toca por 300ms
-  } catch (e) {}
-}
-
-// Função para fazer a aba piscar no navegador
-function iniciarPiscarAba(textoAlerta) {
-  if (titleInterval) clearInterval(titleInterval);
-  let toggle = false;
-  titleInterval = setInterval(() => {
-    document.title = toggle ? textoAlerta : originalTitle;
-    toggle = !toggle;
-  }, 1000);
-
-  // Para de piscar assim que o usuário clicar na página ou focar nela
-  const pararAlerta = () => {
-    if (titleInterval) {
-      clearInterval(titleInterval);
-      titleInterval = null;
-      document.title = originalTitle;
-    }
-    window.removeEventListener('focus', pararAlerta);
-    window.removeEventListener('click', pararAlerta);
-  };
-  window.addEventListener('focus', pararAlerta);
-  window.addEventListener('click', pararAlerta);
-}
-
 function dispararNotificacao(titulo, corpo) {
   if ('Notification' in window && Notification.permission === 'granted') {
     new Notification(titulo, { body: corpo, tag: 'ticket-system' });
   }
-  // Ativa os alertas extras na tela
-  tocarAlarmeSonoro();
-  iniciarPiscarAba('🔔 NOVO CHAMADO! 🔔');
 }
 
 async function realizarLogin() {
