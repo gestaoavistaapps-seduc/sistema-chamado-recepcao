@@ -1303,7 +1303,6 @@ let itemsPerPage = 20;
 let totalPages = 1;
 let allFilteredTickets = [];
 
-let pollingInterval = null;
 let lastCheckTime = Date.now();
 const SESSION_KEY = 'ticketSystem_session';
 const SESSION_TIMEOUT = 12 * 60 * 60 * 1000;
@@ -1836,16 +1835,22 @@ function setupEventListeners() {
 }
 
 function initPollingSystem() {
-  setInterval(async () => {
+  if (window.ticketPollingInterval) clearInterval(window.ticketPollingInterval);
+  
+  window.ticketPollingInterval = setInterval(async () => {
     if (!isLoggedIn) return;
     try {
-      const res = await chamarGas('checkForUpdates', { lastCheckTime });
-      if (res.success && res.hasUpdates) {
-        if (res.newTickets > 0) dispararNotificacao('🔔 Novo Chamado', `${res.newTickets} novo(s) chamado(s).`);
-        lastCheckTime = res.lastCheckTime;
+      const res = await chamarGas('checkForUpdates', { lastCheckTime, _t: Date.now() });
+      if (res && res.success && res.hasUpdates) {
+        if (res.newTickets > 0) {
+          dispararNotificacao('🔔 Novo Chamado', `Você recebeu ${res.newTickets} novo(s) chamado(s).`);
+        }
+        if (res.lastCheckTime) {
+          lastCheckTime = res.lastCheckTime;
+        }
         loadTickets();
       }
-    } catch(e){}
+    } catch(e) {}
   }, 10000);
 }
 
